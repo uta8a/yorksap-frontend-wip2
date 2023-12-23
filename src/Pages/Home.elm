@@ -31,6 +31,7 @@ view shared =
                 [ div [] [ a [ href "/counter" ] [ text "See counter" ] ]
                 , div [] [ a [ href "/time" ] [ text "See time" ] ]
                 , div [] [ a [ href "/about" ] [ text "About vite-elm-spa" ] ]
+                , div [] [ a [ href "/description" ] [ text "desc" ] ]
                 ]
             , p []
                 [ a [ href "https://vitejs.dev/guide/features.html" ] [ text "Vite Documentation" ]
