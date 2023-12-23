@@ -4,6 +4,8 @@ import Effect exposing (Effect)
 import Html exposing (Html, a, button, div, li, text, ul)
 import Html.Attributes exposing (href, id)
 import Html.Events exposing (onClick)
+import Http
+import Json.Decode as Decode
 import Maybe exposing (withDefault)
 import Shared exposing (Shared)
 import Spa.Page
@@ -24,13 +26,15 @@ type Msg
     = SetValue RoomList
 
 
-type alias Model =
-    { roomlist : RoomList
-    }
+type Model
+    = Failure
+    | Loading
+    | Success RoomList
 
 
 type alias RoomList =
-    List Room
+    { roomlist : List Room
+    }
 
 
 type alias Room =
@@ -45,14 +49,19 @@ type alias Room =
 
 init : () -> ( Model, Effect Shared.Msg Msg )
 init _ =
-    Model [] |> Effect.withNone
+    Loading
+        |> Effect.withPerform SetValue
+            Http.get
+            { url = "/api/v1/room.json"
+            , expect = Http.expectJson (Decode.succeed SetValue) Decode.list
+            }
 
 
 update : Msg -> Model -> ( Model, Effect Shared.Msg Msg )
 update msg model =
     case msg of
         SetValue roomlist ->
-            ( { model | roomlist = roomlist }, Effect.none )
+            ( Success roomlist, Effect.none )
 
 
 view : Model -> View Msg
@@ -61,9 +70,16 @@ view model =
     , body =
         div []
             [ text "This is the description page"
-            , button [ onClick (SetValue [ { id = "1", name = "room1" }, { id = "2", name = "room2" } ]) ] [ text "Click me" ]
-            , div [] [ text (withDefault { id = "null", name = "null" } (List.head model.roomlist)).name ]
-            , renderList model.roomlist
+            , button [ onClick (SetValue { roomlist = [ { id = "1", name = "room1" }, { id = "2", name = "room2" } ] }) ] [ text "Click me" ]
+            , case model of
+                Failure ->
+                    div [] [ text "failed fetch" ]
+
+                Loading ->
+                    div [] [ text "Loading..." ]
+
+                Success m ->
+                    renderList m.roomlist
             ]
     }
 
