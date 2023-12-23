@@ -1,4 +1,7 @@
-# Vite Elm SPA Template
+# WIP: yorksap frontend
+
+<details>
+<summary>Previous README</summary>
 
 [![ci](https://github.com/lindsaykwardell/vite-elm-spa/actions/workflows/ci.yml/badge.svg)](https://github.com/lindsaykwardell/vite-elm-spa/actions/workflows/ci.yml)
 [![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-908a85?logo=gitpod)](https://gitpod.io/#https://github.com/lindsaykwardell/vite-elm-spa)
@@ -38,3 +41,5 @@ npm run dev
 For more information about Vite, check out [Vite's official documentation.](https://vitejs.dev/)
 
 To learn more about Elm, check out [Elm's official homepage](https://elm-lang.org/).
+
+</details>
