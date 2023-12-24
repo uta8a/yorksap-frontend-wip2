@@ -1,11 +1,12 @@
 module Pages.Description exposing (page)
 
+import Debug
 import Effect exposing (Effect)
 import Html exposing (Html, a, button, div, li, text, ul)
 import Html.Attributes exposing (href, id)
 import Html.Events exposing (onClick)
 import Http
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder, field, int, map, map2, string)
 import Maybe exposing (withDefault)
 import Shared exposing (Shared)
 import Spa.Page
@@ -23,7 +24,7 @@ page _ =
 
 
 type Msg
-    = SetValue RoomList
+    = GotResult (Result Http.Error RoomList)
 
 
 type Model
@@ -49,14 +50,19 @@ type alias Room =
 
 init : () -> ( Model, Effect Shared.Msg Msg )
 init _ =
-    ( Loading, Effect.fromCmd (Cmd.map mapHttpRawToMsg getPublicOpinion) )
+    ( Loading, Effect.fromCmd (Cmd.map mapHttpRawToMsg fetchRoomList) )
 
 
 update : Msg -> Model -> ( Model, Effect Shared.Msg Msg )
-update msg model =
+update msg _ =
     case msg of
-        SetValue roomlist ->
-            ( Success roomlist, Effect.none )
+        GotResult result ->
+            case result of
+                Ok roomlist ->
+                    ( Success roomlist, Effect.none )
+
+                Err _ ->
+                    ( Failure, Effect.none )
 
 
 view : Model -> View Msg
@@ -65,7 +71,6 @@ view model =
     , body =
         div []
             [ text "This is the description page"
-            , button [ onClick (SetValue { roomlist = [ { id = "1", name = "room1" }, { id = "2", name = "room2" } ] }) ] [ text "Click me" ]
             , case model of
                 Failure ->
                     div [] [ text "failed fetch" ]
@@ -91,24 +96,37 @@ renderList lst =
 
 
 type HttpRaw
-    = GotText (Result Http.Error String)
+    = GotRoomList (Result Http.Error RoomList)
 
 
-getPublicOpinion : Cmd HttpRaw
-getPublicOpinion =
+fetchRoomList : Cmd HttpRaw
+fetchRoomList =
     Http.get
         { url = "/api/v1/room"
-        , expect = Http.expectString GotText
+        , expect = Http.expectJson GotRoomList roomListDecoder
         }
+
+
+roomListDecoder : Decoder RoomList
+roomListDecoder =
+    map RoomList
+        (field "roomlist" (Decode.list roomDecoder))
+
+
+roomDecoder : Decoder Room
+roomDecoder =
+    map2 Room
+        (field "id" string)
+        (field "name" string)
 
 
 mapHttpRawToMsg : HttpRaw -> Msg
 mapHttpRawToMsg raw =
-    case raw of
-        GotText result ->
+    case Debug.log "raw" raw of
+        GotRoomList result ->
             case result of
-                Ok x ->
-                    SetValue { roomlist = [ { id = "1", name = x }, { id = "2", name = "room2" } ] }
+                Ok roomlist ->
+                    GotResult (Ok roomlist)
 
                 Err _ ->
-                    SetValue { roomlist = [ { id = "1", name = "room1" }, { id = "2", name = "room2" } ] }
+                    GotResult (Err (Http.BadStatus 500))
