@@ -8,6 +8,7 @@ import Pages.About as About
 import Pages.Counter as Counter
 import Pages.Description as Description
 import Pages.Home as Home
+import Pages.Room.Id as RoomId
 import Pages.SignIn as SignIn
 import Pages.Time as Time
 import Route
@@ -71,6 +72,7 @@ main =
         |> Spa.addPublicPage mappers Route.matchSignIn SignIn.page
         |> Spa.addProtectedPage mappers Route.matchCounter Counter.page
         |> Spa.addPublicPage mappers Route.matchTime Time.page
+        |> Spa.addPublicPage mappers Route.matchRoomId RoomId.page
         |> Spa.application View.map
             { init = Shared.init
             , subscriptions = Shared.subscriptions

@@ -1,8 +1,11 @@
-module Route exposing (Route(..), matchAbout, matchCounter, matchDescription, matchHome, matchSignIn, matchTime, toRoute, toUrl)
+module Route exposing (Route(..), matchAbout, matchCounter, matchDescription, matchHome, matchRoomId, matchSignIn, matchTime, toRoute, toUrl)
 
+import Html exposing (a)
+import Maybe exposing (withDefault)
+import String exposing (fromInt)
 import Url exposing (Url)
 import Url.Builder as Builder
-import Url.Parser exposing ((<?>), Parser, map, oneOf, parse, s, top)
+import Url.Parser exposing ((</>), (<?>), Parser, fragment, int, map, oneOf, parse, s, string, top)
 import Url.Parser.Query as Query
 
 
@@ -14,6 +17,21 @@ type Route
     | About
     | Description
     | NotFound Url
+    | RoomId ( String, Maybe Int )
+
+
+type alias Room =
+    ( String, Maybe Int )
+
+
+pair : String -> Maybe String -> ( String, Maybe Int )
+pair a b =
+    ( a, b |> Maybe.andThen String.toInt )
+
+
+room : Parser (Room -> a) a
+room =
+    s "room" </> map pair (string </> fragment identity)
 
 
 route : Parser (Route -> a) a
@@ -22,6 +40,7 @@ route =
         [ map Home top
         , map About <| s "about"
         , map Description <| s "description"
+        , map RoomId <| room
         , map SignIn <| s "sign-in" <?> Query.string "redirect"
         , map Counter <| s "counter" <?> (Query.int "value" |> Query.map (Maybe.withDefault 0))
         , map Time <| s "time"
@@ -59,6 +78,18 @@ toUrl r =
 
         Time ->
             "/time"
+
+        RoomId ( roomId, phase ) ->
+            "/room/"
+                ++ roomId
+                ++ "/"
+                ++ (case phase of
+                        Just p ->
+                            fromInt p
+
+                        Nothing ->
+                            ""
+                   )
 
         NotFound url ->
             Url.toString url
@@ -121,3 +152,13 @@ matchCounter r =
 matchTime : Route -> Maybe ()
 matchTime =
     matchAny Time
+
+
+matchRoomId : Route -> Maybe ( String, Maybe Int )
+matchRoomId r =
+    case r of
+        RoomId p ->
+            Just p
+
+        _ ->
+            Nothing
