@@ -97,7 +97,7 @@ type HttpRaw
 getPublicOpinion : Cmd HttpRaw
 getPublicOpinion =
     Http.get
-        { url = "https://elm-lang.org/assets/public-opinion.txt"
+        { url = "/api/v1/room"
         , expect = Http.expectString GotText
         }
 
