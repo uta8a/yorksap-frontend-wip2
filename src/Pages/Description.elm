@@ -2,7 +2,7 @@ module Pages.Description exposing (page)
 
 import Debug
 import Effect exposing (Effect)
-import Html exposing (Html, a, button, div, li, text, ul)
+import Html exposing (Html, a, button, div, h1, li, p, text, ul)
 import Html.Attributes exposing (href, id)
 import Html.Events exposing (onClick)
 import Http
@@ -70,7 +70,8 @@ view model =
     { title = "Description"
     , body =
         div []
-            [ text "This is the description page"
+            [ h1 [] [ text "わくわくyorksapランドだよ！" ]
+            , p [] [ text "ルーム一覧" ]
             , case model of
                 Failure ->
                     div [] [ text "failed fetch" ]
@@ -91,7 +92,7 @@ view model =
 renderList : List Room -> Html Msg
 renderList lst =
     lst
-        |> List.map (\l -> li [] [ text (l.id ++ " / " ++ l.name) ])
+        |> List.map (\l -> li [] [ a [ href ("/room/" ++ l.id) ] [ text l.name ] ])
         |> ul []
 
 
@@ -122,7 +123,7 @@ roomDecoder =
 
 mapHttpRawToMsg : HttpRaw -> Msg
 mapHttpRawToMsg raw =
-    case Debug.log "raw" raw of
+    case raw of
         GotRoomList result ->
             case result of
                 Ok roomlist ->

@@ -47,7 +47,7 @@ toDocument shared view =
                             ]
 
                         Nothing ->
-                            [ a [ href "/sign-in" ] [ text "Sign-in" ] ]
+                            []
                 , div
                     [ style "display" "flex"
                     , style "align-items" "center"
