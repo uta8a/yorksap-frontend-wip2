@@ -49,12 +49,7 @@ type alias Room =
 
 init : () -> ( Model, Effect Shared.Msg Msg )
 init _ =
-    Loading
-        |> Effect.withPerform SetValue
-            Http.get
-            { url = "/api/v1/room.json"
-            , expect = Http.expectJson (Decode.succeed SetValue) Decode.list
-            }
+    ( Loading, Effect.fromCmd (Cmd.map mapHttpRawToMsg getPublicOpinion) )
 
 
 update : Msg -> Model -> ( Model, Effect Shared.Msg Msg )
@@ -93,3 +88,27 @@ renderList lst =
     lst
         |> List.map (\l -> li [] [ text (l.id ++ " / " ++ l.name) ])
         |> ul []
+
+
+type HttpRaw
+    = GotText (Result Http.Error String)
+
+
+getPublicOpinion : Cmd HttpRaw
+getPublicOpinion =
+    Http.get
+        { url = "https://elm-lang.org/assets/public-opinion.txt"
+        , expect = Http.expectString GotText
+        }
+
+
+mapHttpRawToMsg : HttpRaw -> Msg
+mapHttpRawToMsg raw =
+    case raw of
+        GotText result ->
+            case result of
+                Ok x ->
+                    SetValue { roomlist = [ { id = "1", name = x }, { id = "2", name = "room2" } ] }
+
+                Err _ ->
+                    SetValue { roomlist = [ { id = "1", name = "room1" }, { id = "2", name = "room2" } ] }
