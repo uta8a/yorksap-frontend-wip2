@@ -6,6 +6,9 @@
             "phase": 0,
             "player": [
                 {
+                    "name": "alice"
+                },
+                {
                     "name": "Bob",
                     "position": 12,
                     "selectedTicket": "TAXI"
@@ -35,6 +38,9 @@
         {
             "phase": 1,
             "player": [
+                {
+                    "name": "alice"
+                },
                 {
                     "name": "Bob",
                     "position": 15,

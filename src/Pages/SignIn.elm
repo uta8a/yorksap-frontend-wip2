@@ -1,3 +1,6 @@
+-- これは元々あったページで、Signin参考用に残しています
+
+
 module Pages.SignIn exposing (Model, Msg(..), page)
 
 import Effect exposing (Effect)

@@ -1,5 +1,15 @@
 # WIP: yorksap frontend
 
+```bash
+cd data/
+python3 -m http.server # listen on port 8000
+cd ..
+npm run dev
+```
+
+- http://localhost:5173/ へアクセス
+- room1へアクセス(現在はこのroomページを作成中)
+
 <details>
 <summary>Previous README</summary>
 

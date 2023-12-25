@@ -1,21 +1,15 @@
-module Route exposing (Route(..), matchAbout, matchCounter, matchDescription, matchHome, matchRoomId, matchSignIn, matchTime, toRoute, toUrl)
+module Route exposing (Route(..), matchHome, matchRoomId, matchSignIn, toRoute, toUrl)
 
-import Html exposing (a)
-import Maybe exposing (withDefault)
+import Maybe
 import String exposing (fromInt)
 import Url exposing (Url)
 import Url.Builder as Builder
-import Url.Parser exposing ((</>), (<?>), Parser, fragment, int, map, oneOf, parse, s, string, top)
-import Url.Parser.Query as Query
+import Url.Parser exposing ((</>), Parser, fragment, map, oneOf, parse, s, string, top)
 
 
 type Route
-    = Home
-    | SignIn (Maybe String)
-    | Counter Int
-    | Time
-    | About
-    | Description
+    = SignIn (Maybe String)
+    | Home
     | NotFound Url
     | RoomId ( String, Maybe Int )
 
@@ -38,12 +32,7 @@ route : Parser (Route -> a) a
 route =
     oneOf
         [ map Home top
-        , map About <| s "about"
-        , map Description <| s "description"
         , map RoomId <| room
-        , map SignIn <| s "sign-in" <?> Query.string "redirect"
-        , map Counter <| s "counter" <?> (Query.int "value" |> Query.map (Maybe.withDefault 0))
-        , map Time <| s "time"
         ]
 
 
@@ -60,24 +49,12 @@ toUrl r =
         Home ->
             "/"
 
-        About ->
-            "/about"
-
-        Description ->
-            "/Description"
-
         SignIn redirect ->
             Builder.absolute [ "sign-in" ]
                 (redirect
                     |> Maybe.map (Builder.string "redirect" >> List.singleton)
                     |> Maybe.withDefault []
                 )
-
-        Counter value ->
-            "/counter?value=" ++ String.fromInt value
-
-        Time ->
-            "/time"
 
         RoomId ( roomId, phase ) ->
             "/room/"
@@ -95,34 +72,10 @@ toUrl r =
             Url.toString url
 
 
-matchAny : Route -> Route -> Maybe ()
-matchAny any r =
-    if any == r then
-        Just ()
-
-    else
-        Nothing
-
-
 matchHome : Route -> Maybe ()
-matchHome =
-    matchAny Home
-
-
-matchAbout : Route -> Maybe ()
-matchAbout r =
+matchHome r =
     case r of
-        About ->
-            Just ()
-
-        _ ->
-            Nothing
-
-
-matchDescription : Route -> Maybe ()
-matchDescription r =
-    case r of
-        Description ->
+        Home ->
             Just ()
 
         _ ->
@@ -137,21 +90,6 @@ matchSignIn r =
 
         _ ->
             Nothing
-
-
-matchCounter : Route -> Maybe Int
-matchCounter r =
-    case r of
-        Counter value ->
-            Just value
-
-        _ ->
-            Nothing
-
-
-matchTime : Route -> Maybe ()
-matchTime =
-    matchAny Time
 
 
 matchRoomId : Route -> Maybe ( String, Maybe Int )

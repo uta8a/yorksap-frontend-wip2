@@ -4,14 +4,12 @@ module Shared exposing
     , Shared
     , identity
     , init
-    , replaceRoute
     , setIdentity
     , subscriptions
     , update
     )
 
 import Browser.Navigation as Nav
-import Route exposing (Route)
 
 
 type alias Identity =
@@ -27,7 +25,6 @@ type alias Shared =
 type Msg
     = SetIdentity Identity (Maybe String)
     | ResetIdentity
-    | ReplaceRoute Route
 
 
 identity : Shared -> Maybe String
@@ -57,9 +54,6 @@ update msg shared =
         ResetIdentity ->
             ( { shared | identity = Nothing }, Cmd.none )
 
-        ReplaceRoute route ->
-            ( shared, Nav.replaceUrl shared.key <| Route.toUrl route )
-
 
 subscriptions : Shared -> Sub Msg
 subscriptions =
@@ -69,8 +63,3 @@ subscriptions =
 setIdentity : String -> Maybe String -> Msg
 setIdentity =
     SetIdentity
-
-
-replaceRoute : Route -> Msg
-replaceRoute =
-    ReplaceRoute

@@ -1,11 +1,11 @@
-module Pages.Room.Id exposing (page)
+module Pages.Room.Id exposing (Model, Msg, page)
 
-import Debug
 import Effect exposing (Effect)
-import Html exposing (a, div, text)
-import Html.Attributes exposing (href)
+import Html exposing (Html, a, div, h1, p, table, tbody, text, th, thead, tr)
+import Html.Attributes exposing (href, style)
 import Http
 import Json.Decode as Decode exposing (Decoder, field, int, map2, map3, maybe, string)
+import List exposing (head)
 import Result exposing (Result)
 import Shared exposing (Shared)
 import Spa.Page
@@ -37,7 +37,6 @@ init : ( String, Maybe Int ) -> ( Model, Effect Shared.Msg Msg )
 init ( roomId, phase ) =
     ( Loading
     , Effect.fromCmd (fetchGameData ( roomId, phase ))
-      -- TODO: fetch game data
     )
 
 
@@ -55,7 +54,54 @@ update msg _ =
 
 debugConvert : Http.Error -> String
 debugConvert _ =
-    "error"
+    "Error"
+
+
+dec : List (List Player) -> String
+dec _ =
+    "hoge"
+
+
+phaseView : List Phase -> Html Msg
+phaseView phaseList =
+    tr [] [ text (dec (List.map .player phaseList)) ]
+
+
+playerHeaderView : Player -> Html Msg
+playerHeaderView player =
+    th [] [ text player.name ]
+
+
+phaseHeaderView : Phase -> Html Msg
+phaseHeaderView phase =
+    tr []
+        (th
+            []
+            [ text "" ]
+            :: List.map
+                playerHeaderView
+                phase.player
+        )
+
+
+historyView : Model -> Html Msg
+historyView model =
+    case model of
+        Loading ->
+            div [] [ text "Loading..." ]
+
+        Failure e ->
+            div [] [ text (debugConvert e) ]
+
+        Success data ->
+            div []
+                [ h1 [] [ text data.roomId ]
+                , p [ style "font-weight" "bold" ] [ text ("Now: Phase " ++ fromInt data.phase) ]
+                , table []
+                    [ thead [] [ head (List.map phaseHeaderView data.history) |> Maybe.withDefault (tr [] []) ]
+                    , tbody [] [ phaseView data.history ]
+                    ]
+                ]
 
 
 view : Model -> View Msg
@@ -63,19 +109,7 @@ view model =
     { title = "game"
     , body =
         div []
-            [ text
-                ("hello "
-                    ++ (case model of
-                            Loading ->
-                                "loading"
-
-                            Failure e ->
-                                "failure" ++ debugConvert (Debug.log "httperror" e)
-
-                            Success gameData ->
-                                "success" ++ gameData.roomId ++ fromInt gameData.phase
-                       )
-                )
+            [ historyView model
             , div [] [ a [ href "/" ] [ text "Go back to the home page" ] ]
             ]
     }
@@ -101,7 +135,7 @@ type alias Phase =
 
 type alias Player =
     { name : String
-    , position : Int
+    , position : Maybe Int
     , selectedTicket : Maybe Ticket
     }
 
@@ -118,7 +152,7 @@ type Ticket
 
 
 fetchGameData : ( String, Maybe Int ) -> Cmd Msg
-fetchGameData ( roomId, phase ) =
+fetchGameData ( roomId, _ ) =
     Http.get
         { url = "/api/v1/room/" ++ roomId
         , expect = Http.expectJson RenderPage gameDataDecoder
@@ -144,7 +178,7 @@ playerDecoder : Decoder Player
 playerDecoder =
     map3 Player
         (field "name" string)
-        (field "position" int)
+        (maybe (field "position" int))
         (maybe (field "selectedTicket" ticketDecoder))
 
 
