@@ -5,9 +5,12 @@ export default defineConfig({
   plugins: [elmPlugin()],
   server: {
     proxy: {
+      // "/api": {
+      //   target: "http://localhost:8000",
+      //   rewrite: (path) => `${path.replace(/\/+$/, "")}.json`,
+      // },
       "/api": {
-        target: "http://localhost:8000",
-        rewrite: (path) => `${path.replace(/\/+$/, "")}.json`,
+        target: "http://localhost:8080",
       },
       "/ws": {
         target: "ws://localhost:8001",

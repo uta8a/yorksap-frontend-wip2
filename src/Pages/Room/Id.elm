@@ -134,7 +134,7 @@ historyView model =
             div [] [ text "Loading..." ]
 
         Failure e ->
-            div [] [ text (debugConvert e) ]
+            div [] [ text (debugConvert (Debug.log "failure" e)) ]
 
         Success data ->
             div []
