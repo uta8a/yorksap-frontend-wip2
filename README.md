@@ -3,6 +3,7 @@
 ```bash
 cd data/
 python3 -m http.server # listen on port 8000
+# another terminal
 cd ..
 npm run dev
 ```
