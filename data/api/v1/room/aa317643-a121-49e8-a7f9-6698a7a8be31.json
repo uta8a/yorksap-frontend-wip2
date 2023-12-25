@@ -21,7 +21,7 @@
                 {
                     "name": "Dave",
                     "position": 101,
-                    "selectedTicket": "TRAIN"
+                    "selectedTicket": "UNDERGROUND"
                 },
                 {
                     "name": "Eve",
@@ -59,7 +59,7 @@
                 {
                     "name": "Eve",
                     "position": 115,
-                    "selectedTicket": "TRAIN"
+                    "selectedTicket": "UNDERGROUND"
                 },
                 {
                     "name": "Frank",

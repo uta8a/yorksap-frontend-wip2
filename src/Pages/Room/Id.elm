@@ -81,16 +81,16 @@ ticketToString : Ticket -> String
 ticketToString ticket =
     case ticket of
         Taxi ->
-            "TAXI"
+            "taxi"
 
         Bus ->
-            "BUS"
+            "bus"
 
         Underground ->
-            "UNDERGROUND"
+            "ug"
 
-        Black ->
-            "BLACK"
+        Secret ->
+            "secret"
 
 
 dec : Int -> List Player -> List Player -> List (Html Msg)
@@ -142,7 +142,7 @@ historyView model =
                 , p [ style "font-weight" "bold" ] [ text ("Now: Phase " ++ fromInt (data.phase + 1)) ]
                 , table [ style "text-align" "center" ]
                     [ thead [] [ head (List.map phaseHeaderView data.history) |> Maybe.withDefault (tr [] []) ]
-                    , tbody [] (phaseView data.history)
+                    , tbody [] (phaseView (Debug.log "history" data.history))
                     ]
                 ]
 
@@ -187,7 +187,7 @@ type Ticket
     = Taxi
     | Bus
     | Underground
-    | Black
+    | Secret
 
 
 
@@ -240,8 +240,8 @@ ticketDecoder =
                     "UNDERGROUND" ->
                         Decode.succeed Underground
 
-                    "BLACK" ->
-                        Decode.succeed Black
+                    "SECRET" ->
+                        Decode.succeed Secret
 
                     _ ->
                         Decode.fail "invalid ticket"
