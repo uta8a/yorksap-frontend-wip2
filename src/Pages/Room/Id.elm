@@ -1,11 +1,11 @@
 module Pages.Room.Id exposing (Model, Msg, page)
 
 import Effect exposing (Effect)
-import Html exposing (Html, a, div, h1, p, table, tbody, text, th, thead, tr)
+import Html exposing (Html, a, div, h1, p, table, tbody, td, text, th, thead, tr)
 import Html.Attributes exposing (href, style)
 import Http
 import Json.Decode as Decode exposing (Decoder, field, int, map2, map3, maybe, string)
-import List exposing (head)
+import List exposing (concat, head)
 import Result exposing (Result)
 import Shared exposing (Shared)
 import Spa.Page
@@ -57,14 +57,57 @@ debugConvert _ =
     "Error"
 
 
-dec : List (List Player) -> String
-dec _ =
-    "hoge"
+posToText : Maybe Int -> Html Msg
+posToText pos =
+    case pos of
+        Just p ->
+            td [] [ text (fromInt p) ]
+
+        Nothing ->
+            td [] [ text "-" ]
 
 
-phaseView : List Phase -> Html Msg
+ticketToText : Maybe Ticket -> Html Msg
+ticketToText ticket =
+    case ticket of
+        Just t ->
+            td [] [ text (ticketToString t) ]
+
+        Nothing ->
+            td [] [ text "-" ]
+
+
+ticketToString : Ticket -> String
+ticketToString ticket =
+    case ticket of
+        Taxi ->
+            "taxi"
+
+        Bus ->
+            "bus"
+
+        Underground ->
+            "ug"
+
+        Secret ->
+            "secret"
+
+
+dec : Int -> List Player -> List Player -> List (Html Msg)
+dec i a b =
+    [ tr [] (td [] [ text (fromInt (i + 1)) ] :: List.map posToText (List.map .position a))
+    , tr [] (td [] [ text "" ] :: List.map ticketToText (List.map .selectedTicket b))
+    ]
+
+
+decHelper : List (List (Html Msg)) -> List (Html Msg)
+decHelper list =
+    concat list
+
+
+phaseView : List Phase -> List (Html Msg)
 phaseView phaseList =
-    tr [] [ text (dec (List.map .player phaseList)) ]
+    decHelper (List.map3 dec (List.map .phase phaseList) (List.map .player phaseList) (List.map .player phaseList))
 
 
 playerHeaderView : Player -> Html Msg
@@ -96,10 +139,10 @@ historyView model =
         Success data ->
             div []
                 [ h1 [] [ text data.roomId ]
-                , p [ style "font-weight" "bold" ] [ text ("Now: Phase " ++ fromInt data.phase) ]
-                , table []
+                , p [ style "font-weight" "bold" ] [ text ("Now: Phase " ++ fromInt (data.phase + 1)) ]
+                , table [ style "text-align" "center" ]
                     [ thead [] [ head (List.map phaseHeaderView data.history) |> Maybe.withDefault (tr [] []) ]
-                    , tbody [] [ phaseView data.history ]
+                    , tbody [] (phaseView (Debug.log "history" data.history))
                     ]
                 ]
 
@@ -144,7 +187,7 @@ type Ticket
     = Taxi
     | Bus
     | Underground
-    | Black
+    | Secret
 
 
 
@@ -197,8 +240,8 @@ ticketDecoder =
                     "UNDERGROUND" ->
                         Decode.succeed Underground
 
-                    "BLACK" ->
-                        Decode.succeed Black
+                    "SECRET" ->
+                        Decode.succeed Secret
 
                     _ ->
                         Decode.fail "invalid ticket"
