@@ -4,7 +4,7 @@ import Effect exposing (Effect)
 import Html exposing (Html, a, div, h1, p, table, tbody, td, text, th, thead, tr)
 import Html.Attributes exposing (href, style)
 import Http
-import Json.Decode as Decode exposing (Decoder, field, int, map2, map3, maybe, string)
+import Json.Decode as Decode exposing (Decoder, field, int, map2, map3, map4, maybe, string)
 import List exposing (concat, head)
 import Result exposing (Result)
 import Shared exposing (Shared)
@@ -166,6 +166,7 @@ type alias GameData =
     -- TODO: add more fields
     { roomId : String
     , phase : Int
+    , turn : String
     , history : List Phase
     }
 
@@ -204,9 +205,10 @@ fetchGameData ( roomId, _ ) =
 
 gameDataDecoder : Decoder GameData
 gameDataDecoder =
-    map3 GameData
+    map4 GameData
         (field "roomId" string)
         (field "phase" int)
+        (field "turn" string)
         (field "history" (Decode.list phaseDecoder))
 
 
