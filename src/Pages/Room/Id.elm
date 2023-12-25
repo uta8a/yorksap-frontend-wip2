@@ -4,8 +4,8 @@ import Effect exposing (Effect)
 import Html exposing (Html, a, div, h1, p, table, tbody, td, text, th, thead, tr)
 import Html.Attributes exposing (href, style)
 import Http
-import Json.Decode as Decode exposing (Decoder, field, int, map2, map3, map4, maybe, string)
-import List exposing (concat, head)
+import Json.Decode as Decode exposing (Decoder, field, int, map, map2, map3, map4, maybe, string)
+import List exposing (concat, head, singleton)
 import Result exposing (Result)
 import Shared exposing (Shared)
 import Spa.Page
@@ -24,29 +24,59 @@ page _ =
 
 
 type Msg
-    = RenderPage (Result Http.Error GameData)
+    = GetGameData (Result Http.Error GameData)
+    | GetRoomData (Result Http.Error RoomData)
+
+
+type alias MainData =
+    { room : RoomData
+    , game : GameData
+    }
 
 
 type Model
     = Failure Http.Error
     | Loading
-    | Success GameData
+    | Success MainData
 
 
 init : ( String, Maybe Int ) -> ( Model, Effect Shared.Msg Msg )
 init ( roomId, phase ) =
     ( Loading
-    , Effect.fromCmd (fetchGameData ( roomId, phase ))
+    , Effect.fromCmd
+        (Cmd.batch
+            [ fetchGameData ( roomId, phase )
+            , fetchRoomData roomId
+            ]
+        )
     )
 
 
 update : Msg -> Model -> ( Model, Effect Shared.Msg Msg )
-update msg _ =
+update msg model =
     case msg of
-        RenderPage result ->
-            case result of
+        GetGameData gameResult ->
+            case gameResult of
                 Ok gameData ->
-                    ( Success gameData, Effect.none )
+                    case model of
+                        Success data ->
+                            ( Success { room = data.room, game = gameData }, Effect.none )
+
+                        _ ->
+                            ( Success { room = { roomName = "" }, game = gameData }, Effect.none )
+
+                Err e ->
+                    ( Failure e, Effect.none )
+
+        GetRoomData roomResult ->
+            case roomResult of
+                Ok roomData ->
+                    case model of
+                        Success data ->
+                            ( Success { room = roomData, game = data.game }, Effect.none )
+
+                        _ ->
+                            ( Success { room = roomData, game = { phase = 0, turn = "", nowPosition = [], history = [] } }, Effect.none )
 
                 Err e ->
                     ( Failure e, Effect.none )
@@ -100,14 +130,19 @@ dec i a b =
     ]
 
 
-decHelper : List (List (Html Msg)) -> List (Html Msg)
-decHelper list =
-    concat list
+decHelper : List (Html Msg) -> List (List (Html Msg)) -> List (Html Msg)
+decHelper list1 list2 =
+    concat (list2 ++ singleton list1)
 
 
-phaseView : List Phase -> List (Html Msg)
-phaseView phaseList =
-    decHelper (List.map3 dec (List.map .phase phaseList) (List.map .player phaseList) (List.map .player phaseList))
+nowPositionToText : List Player -> List (Html Msg)
+nowPositionToText nowPosition =
+    [ tr [ style "background-color" "#c9fcff", style "font-weight" "bold" ] (td [] [ text "NOW" ] :: List.map posToText (List.map .position nowPosition)) ]
+
+
+phaseView : List Phase -> List Player -> List (Html Msg)
+phaseView phaseList nowPosition =
+    decHelper (nowPositionToText nowPosition) (List.map3 dec (List.map .phase phaseList) (List.map .player phaseList) (List.map .player phaseList))
 
 
 playerHeaderView : Player -> Html Msg
@@ -136,13 +171,13 @@ historyView model =
         Failure e ->
             div [] [ text (debugConvert (Debug.log "failure" e)) ]
 
-        Success data ->
+        Success mainData ->
             div []
-                [ h1 [] [ text data.roomId ]
-                , p [ style "font-weight" "bold" ] [ text ("Now: Phase " ++ fromInt (data.phase + 1)) ]
+                [ h1 [] [ text mainData.room.roomName ]
+                , p [ style "font-weight" "bold" ] [ text ("Now: Phase " ++ fromInt (mainData.game.phase + 1)) ]
                 , table [ style "text-align" "center" ]
-                    [ thead [] [ head (List.map phaseHeaderView data.history) |> Maybe.withDefault (tr [] []) ]
-                    , tbody [] (phaseView (Debug.log "history" data.history))
+                    [ thead [] [ head (List.map phaseHeaderView mainData.game.history) |> Maybe.withDefault (tr [] []) ]
+                    , tbody [] (phaseView (Debug.log "history" mainData.game.history) mainData.game.nowPosition)
                     ]
                 ]
 
@@ -164,10 +199,15 @@ view model =
 
 type alias GameData =
     -- TODO: add more fields
-    { roomId : String
-    , phase : Int
+    { phase : Int
     , turn : String
+    , nowPosition : List Player
     , history : List Phase
+    }
+
+
+type alias RoomData =
+    { roomName : String
     }
 
 
@@ -198,17 +238,31 @@ type Ticket
 fetchGameData : ( String, Maybe Int ) -> Cmd Msg
 fetchGameData ( roomId, _ ) =
     Http.get
-        { url = "/api/v1/room/" ++ roomId
-        , expect = Http.expectJson RenderPage gameDataDecoder
+        { url = "/api/v1/game/" ++ roomId
+        , expect = Http.expectJson GetGameData gameDataDecoder
         }
+
+
+fetchRoomData : String -> Cmd Msg
+fetchRoomData roomId =
+    Http.get
+        { url = "/api/v1/room/" ++ roomId
+        , expect = Http.expectJson GetRoomData roomDataDecoder
+        }
+
+
+roomDataDecoder : Decoder RoomData
+roomDataDecoder =
+    map RoomData
+        (field "roomName" string)
 
 
 gameDataDecoder : Decoder GameData
 gameDataDecoder =
     map4 GameData
-        (field "roomId" string)
         (field "phase" int)
         (field "turn" string)
+        (field "nowPosition" (Decode.list playerDecoder))
         (field "history" (Decode.list phaseDecoder))
 
 

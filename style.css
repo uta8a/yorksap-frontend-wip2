@@ -39,3 +39,6 @@ tbody tr:nth-of-type(even) {
 tbody tr:last-of-type {
   border-bottom: 2px solid #006898;
 }
+tbody td:first-child {
+  border-right: #dcdcdc 1px solid;
+}
